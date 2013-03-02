@@ -1,6 +1,15 @@
 /*!
  * iScroll v4.2.5 ~ Copyright (c) 2012 Matteo Spinelli, http://cubiq.org
  * Released under MIT license, http://cubiq.org/license
+ * 
+ * ==================customization note===================
+ * added option:
+ * wheelHorizontal	[Boolean]	whether to activate wheel scroll in horizontal scroll area
+ * 		code edited in function _wheel(), line 678
+ * scrollbarIndicatorSize	[Number]	to have a fixed size of the indicator instead of proportional to the size of the scroll area
+ * 		code edited in function _scrollbar(), line 275, 281
+ * scrollbarPadding		[Number]	to make the scroll track longer than the indicator's moving area, should be the sum of the paddings in the scrolling direction (defined in myScrollbarH/V css)
+ * 		code edited in function _scrollbar(), line 274, 280
  */
 (function(window, doc){
 var m = Math,
@@ -262,14 +271,14 @@ iScroll.prototype = {
 		}
 
 		if (dir == 'h') {
-			that.hScrollbarSize = that.hScrollbarWrapper.clientWidth;
-			that.hScrollbarIndicatorSize = m.max(m.round(that.hScrollbarSize * that.hScrollbarSize / that.scrollerW), 8);
+			that.hScrollbarSize = that.hScrollbarWrapper.clientWidth - (that.options.scrollbarPadding ? that.options.scrollbarPadding : 0);
+			that.hScrollbarIndicatorSize = that.options.scrollbarIndicatorSize ? that.options.scrollbarIndicatorSize : m.max(m.round(that.hScrollbarSize * that.hScrollbarSize / that.scrollerW), 8);
 			that.hScrollbarIndicator.style.width = that.hScrollbarIndicatorSize + 'px';
 			that.hScrollbarMaxScroll = that.hScrollbarSize - that.hScrollbarIndicatorSize;
 			that.hScrollbarProp = that.hScrollbarMaxScroll / that.maxScrollX;
 		} else {
-			that.vScrollbarSize = that.vScrollbarWrapper.clientHeight;
-			that.vScrollbarIndicatorSize = m.max(m.round(that.vScrollbarSize * that.vScrollbarSize / that.scrollerH), 8);
+			that.vScrollbarSize = that.vScrollbarWrapper.clientHeight - (that.options.scrollbarPadding ? that.options.scrollbarPadding : 0);
+			that.vScrollbarIndicatorSize = that.options.scrollbarIndicatorSize ? that.options.scrollbarIndicatorSize : m.max(m.round(that.vScrollbarSize * that.vScrollbarSize / that.scrollerH), 8);
 			that.vScrollbarIndicator.style.height = that.vScrollbarIndicatorSize + 'px';
 			that.vScrollbarMaxScroll = that.vScrollbarSize - that.vScrollbarIndicatorSize;
 			that.vScrollbarProp = that.vScrollbarMaxScroll / that.maxScrollY;
@@ -665,7 +674,13 @@ iScroll.prototype = {
 		} else {
 			return;
 		}
-		
+
+		if (that.options.wheelHorizontal && vendor == 'webkit') {
+			if (wheelDeltaY != 0) {
+				wheelDeltaX = wheelDeltaY;
+			}
+		}
+
 		if (that.options.wheelAction == 'zoom') {
 			deltaScale = that.scale * Math.pow(2, 1/3 * (wheelDeltaY ? wheelDeltaY / Math.abs(wheelDeltaY) : 0));
 			if (deltaScale < that.options.zoomMin) deltaScale = that.options.zoomMin;
@@ -694,7 +709,12 @@ iScroll.prototype = {
 
 		if (deltaY > that.minScrollY) deltaY = that.minScrollY;
 		else if (deltaY < that.maxScrollY) deltaY = that.maxScrollY;
-    
+
+		if (that.options.wheelHorizontal && that.maxScrollX < 0) {
+			that.scrollTo(deltaX, deltaY, 0);
+			e.preventDefault();
+			return;
+		}
 		if (that.maxScrollY < 0) {
 			that.scrollTo(deltaX, deltaY, 0);
 		}
